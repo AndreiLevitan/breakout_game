@@ -56,14 +56,14 @@ class BrickPole:
         self.pole = []
         self.brick_width = WIDTH // (bricks + 0)
         self.margin = (WIDTH - self.brick_width * bricks) // 2
-        for i in range(lines):
+        for layer in range(lines):
             for j in range(bricks):
                 x = j * self.brick_width + self.margin
-                y = i * 35
+                y = layer * 35
                 self.place_brick(Brick(x, y, color='blue-brick'))
 
     def place_brick(self, brick):
-        pass
+        self.pole.append(brick)
 
     def check_collision(self):
         all_bricks.update()
@@ -87,24 +87,26 @@ class Ball(pygame.sprite.Sprite):
         self.image = images['ball']
         self.pos = (577, 600)
         self.rect = self.image.get_rect().move(self.pos)
-        self.direction = (RIGHT, TOP)
+        self.direction = [RIGHT, TOP]
         self.xv = 400
         self.yv = 400
 
     def check_collision(self):
         if pygame.sprite.spritecollideany(self, all_bricks):
-            self.yv = -self.yv
+            self.direction[1] = -self.direction[1]
+            self.xv += 5
+            self.yv += 5
             pole.check_collision()
         if self.pos[0] < 0:
-            self.xv = abs(self.xv)
+            self.direction[0] = RIGHT
         if self.pos[0] > 1174:
-            self.xv = -abs(self.xv)
+            self.direction[0] = LEFT
         if self.pos[1] < 0:
-            self.yv = -abs(self.yv)
+            self.direction[1] = DOWN
         if self.pos[1] > 694:
-            self.yv = abs(self.yv)
+            self.direction[1] = TOP
         if pygame.sprite.collide_rect(self, platform):
-            self.yv = abs(self.yv)
+            self.direction[1] = TOP
 
     def move_circle(self, tick):
         xs = self.xv * tick / 1000
