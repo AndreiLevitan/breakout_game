@@ -35,6 +35,13 @@ class Brick(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(x, y)
         all_bricks.add(self)
 
+    def update(self, *args):
+        if pygame.sprite.collide_rect(self, ball):
+            self.delete()
+
+    def delete(self):
+        self.kill()
+
 
 class BrickPole:
     def __init__(self, lines, bricks):
@@ -49,6 +56,9 @@ class BrickPole:
 
     def place_brick(self, brick):
         pass
+
+    def check_collision(self):
+        all_bricks.update()
 
 
 class Platform(pygame.sprite.Sprite):
@@ -76,6 +86,7 @@ class Ball(pygame.sprite.Sprite):
     def check_collision(self):
         if pygame.sprite.spritecollideany(self, all_bricks):
             self.yv = -self.yv
+            pole.check_collision()
         if self.pos[0] < 0:
             self.xv = abs(self.xv)
         if self.pos[0] > 1174:
