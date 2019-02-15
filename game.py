@@ -31,16 +31,24 @@ def load_image(name, colorkey=None):
 class Brick(pygame.sprite.Sprite):
     def __init__(self, x, y, color='blue-brick'):
         super().__init__(all_sprites)
-        self.image = images[color]
+        self.color = color
+        self.image = images[self.color]
         self.rect = self.image.get_rect().move(x, y)
         all_bricks.add(self)
 
     def update(self, *args):
         if pygame.sprite.collide_rect(self, ball):
-            self.delete()
+            self.damage()
 
     def delete(self):
         self.kill()
+
+    def damage(self):
+        if '-damaged' not in self.color:
+            self.color += '-damaged'
+            self.image = images[self.color]
+        else:
+            self.delete()
 
 
 class BrickPole:
@@ -112,7 +120,6 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(self.pos)
 
 
-
 TOP = -1
 DOWN = 1
 
@@ -133,6 +140,7 @@ FPS = 50
 
 images = {
     'blue-brick': load_image('images/bricks/blue_brick.png'),
+    'blue-brick-damaged': load_image('images/bricks/blue_brick_damaged.png'),
     'ball': load_image('images/ball.png'),
     'platform': load_image('images/platform.png')
 }
