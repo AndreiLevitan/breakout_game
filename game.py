@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-import time
 
 
 def update_screen():
@@ -45,6 +44,7 @@ class Brick(pygame.sprite.Sprite):
 
     def damage(self):
         if '-damaged' not in self.color:
+
             self.color += '-damaged'
             self.image = images[self.color]
         else:
@@ -81,21 +81,33 @@ class Platform(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(self.pos)
 
 
+class Trail(pygame.sprite.Sprite):
+    def __init__(self, pos):
+        super().__init__()
+        self.image = images['ball-hot']
+        self.pos = pos
+        self.rect = self.image.get_rect().move(self.pos)
+
+    def draw(self):
+        screen.blit(self.image, self.rect)
+
+
 class Ball(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
         self.image = images['ball']
         self.pos = (577, 600)
         self.rect = self.image.get_rect().move(self.pos)
+        self.trail = []
         self.direction = [RIGHT, TOP]
-        self.xv = 400
-        self.yv = 400
+        self.xv = 500
+        self.yv = 500
 
     def check_collision(self):
         if pygame.sprite.spritecollideany(self, all_bricks):
             self.direction[1] = -self.direction[1]
-            self.xv += 5
-            self.yv += 5
+            self.xv += 6
+            self.yv += 6
             pole.check_collision()
         if self.pos[0] < 0:
             self.direction[0] = RIGHT
@@ -116,8 +128,15 @@ class Ball(pygame.sprite.Sprite):
             self.pos[1] + self.direction[1] * ys
         )
 
+
     def update(self, tick):
         self.check_collision()
+        self.trail.append(Trail(self.pos))
+        self.trail = self.trail[-6:]
+        for trail in self.trail:
+            trail.update()
+            trail.draw()
+
         self.move_circle(tick)
         self.rect = self.image.get_rect().move(self.pos)
 
@@ -138,12 +157,13 @@ colors = pygame.Color
 all_sprites = pygame.sprite.Group()
 all_bricks = pygame.sprite.Group()
 
-FPS = 50
+FPS = 120
 
 images = {
     'blue-brick': load_image('images/bricks/blue_brick.png'),
     'blue-brick-damaged': load_image('images/bricks/blue_brick_damaged.png'),
     'ball': load_image('images/ball.png'),
+    'ball-hot': load_image('images/ball_hot.png'),
     'platform': load_image('images/platform.png')
 }
 
@@ -161,9 +181,10 @@ while True:
         elif event.type == pygame.MOUSEMOTION:
             platform.move_platform(event.pos[0])
 
-    all_sprites.draw(screen)
+
     tick = clock.tick()
     ball.update(tick)
     all_bricks.draw(screen)
+    all_sprites.draw(screen)
     pygame.display.flip()
     update_screen()
