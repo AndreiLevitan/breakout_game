@@ -5,6 +5,8 @@ import os
 
 def update_screen():
     screen.fill(colors('black'))
+    bg.update()
+    bg.draw()
 
 
 def terminate():
@@ -60,7 +62,11 @@ class BrickPole:
             for j in range(bricks):
                 x = j * self.brick_width + self.margin
                 y = layer * 35
-                self.place_brick(Brick(x, y, color='blue-brick'))
+                if layer in [1, 0]:
+                    brick = 'red-brick'
+                else:
+                    brick = 'blue-brick'
+                self.place_brick(Brick(x, y, color=brick))
 
     def place_brick(self, brick):
         self.pole.append(brick)
@@ -86,6 +92,28 @@ class Trail(pygame.sprite.Sprite):
         super().__init__()
         self.image = images['ball-hot']
         self.pos = pos
+        self.rect = self.image.get_rect().move(self.pos)
+
+    def draw(self):
+        screen.blit(self.image, self.rect)
+
+
+class Background(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__()
+        self.pos = [0, 0]
+        self.image = images['background']
+        self.rect = self.image.get_rect().move(self.pos)
+        self.xv = 5
+        self.dir = LEFT
+
+    def update(self):
+        xs = self.xv * tick / 1000
+        if self.pos[0] > 0:
+            self.dir = LEFT
+        if self.pos[0] < -720:
+            self.dir = RIGHT
+        self.pos[0] += xs * self.dir
         self.rect = self.image.get_rect().move(self.pos)
 
     def draw(self):
@@ -128,11 +156,10 @@ class Ball(pygame.sprite.Sprite):
             self.pos[1] + self.direction[1] * ys
         )
 
-
     def update(self, tick):
         self.check_collision()
         self.trail.append(Trail(self.pos))
-        self.trail = self.trail[-6:]
+        self.trail = self.trail[-3:]
         for trail in self.trail:
             trail.update()
             trail.draw()
@@ -162,14 +189,18 @@ FPS = 120
 images = {
     'blue-brick': load_image('images/bricks/blue_brick.png'),
     'blue-brick-damaged': load_image('images/bricks/blue_brick_damaged.png'),
+    'red-brick': load_image('images/bricks/red_brick.png'),
+    'red-brick-damaged': load_image('images/bricks/red_brick_damaged.png'),
     'ball': load_image('images/ball.png'),
     'ball-hot': load_image('images/ball_hot.png'),
-    'platform': load_image('images/platform.png')
+    'platform': load_image('images/platform.png'),
+    'background': load_image('images/bg.png')
 }
 
 pole = BrickPole(7, 12)
 ball = Ball()
 platform = Platform()
+bg = Background()
 
 
 all_sprites.add(ball)
