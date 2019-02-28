@@ -1,6 +1,7 @@
 import pygame
 import sys
 import os
+import time
 
 
 def update_screen():
@@ -29,6 +30,10 @@ def load_image(name, colorkey=None):
     return image
 
 
+def load_sound(name):
+    return pygame.mixer.Sound('/data/{}'.format(name))
+
+
 class Brick(pygame.sprite.Sprite):
     def __init__(self, x, y, color='blue-brick'):
         super().__init__(all_sprites)
@@ -42,6 +47,7 @@ class Brick(pygame.sprite.Sprite):
             self.damage()
 
     def delete(self):
+        indicator.add_combo()
         self.kill()
 
     def damage(self):
@@ -168,17 +174,64 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(self.pos)
 
 
+class Indicator(pygame.sprite.Sprite):
+    def __init__(self):
+        super().__init__(all_sprites)
+        self.combo = 0
+        self.timer = 1000
+        self.pos = (900, 600)
+
+        self.angle = 0
+        self.max_angle = 10
+        self.min_angle = -7
+        self.dir = RIGHT
+        self.v = 5
+
+        self.update_image()
+
+
+    def add_combo(self):
+        self.combo += 1
+        self.timer = 1000
+
+    def remove_combo(self):
+        self.combo = 0
+
+    def update_image(self):
+        index = 'x' + str(min(self.combo, 6))
+        self.image = images['indicators'][index]
+        self.image = pygame.transform.rotate(self.image, self.angle)
+        self.angle += self.v * tick / 1000 * self.dir
+        if self.angle >= self.max_angle:
+            self.dir = LEFT
+        if self.angle <= self.min_angle:
+            self.dir = RIGHT
+        self.rect = self.image.get_rect().move(self.pos)
+
+    def update(self, *args):
+        self.timer -= tick
+        if self.timer < 0:
+            self.timer = 1000
+            self.remove_combo()
+
+        self.update_image()
+
+pygame.init()
+
 TOP = -1
 DOWN = 1
 
 RIGHT = 1
 LEFT = -1
 
+tick = 0
+
 
 clock = pygame.time.Clock()
 SIZE = WIDTH, HEIGHT = 1200, 720
 screen = pygame.display.set_mode(SIZE)
 colors = pygame.Color
+pygame.mouse.set_visible(False)
 
 
 all_sprites = pygame.sprite.Group()
@@ -194,16 +247,30 @@ images = {
     'ball': load_image('images/ball.png'),
     'ball-hot': load_image('images/ball_hot.png'),
     'platform': load_image('images/platform.png'),
-    'background': load_image('images/bg.png')
+    'background': load_image('images/bg.png'),
+    'indicators': {
+        'x0': load_image('images/indicators/x0.png'),
+        'x1': load_image('images/indicators/x1.png'),
+        'x2': load_image('images/indicators/x2.png'),
+        'x3': load_image('images/indicators/x3.png'),
+        'x4': load_image('images/indicators/x4.png'),
+        'x5': load_image('images/indicators/x5.png'),
+        'x6': load_image('images/indicators/x6.png')
+    }
 }
 
 pole = BrickPole(7, 12)
 ball = Ball()
 platform = Platform()
 bg = Background()
+indicator = Indicator()
+
+pygame.mixer.music.load('data/sounds/music/bg_music.mp3')
+pygame.mixer.music.play(-1)
 
 
 all_sprites.add(ball)
+all_sprites.add(indicator)
 
 while True:
     for event in pygame.event.get():
@@ -216,6 +283,7 @@ while True:
     tick = clock.tick()
     ball.update(tick)
     all_bricks.draw(screen)
+    indicator.update()
     all_sprites.draw(screen)
     pygame.display.flip()
     update_screen()
