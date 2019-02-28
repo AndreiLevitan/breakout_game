@@ -31,7 +31,8 @@ def load_image(name, colorkey=None):
 
 
 def load_sound(name):
-    return pygame.mixer.Sound('/data/{}'.format(name))
+    path = os.path.join('data', name)
+    return pygame.mixer.Sound(path)
 
 
 class Brick(pygame.sprite.Sprite):
@@ -40,6 +41,8 @@ class Brick(pygame.sprite.Sprite):
         self.color = color
         self.image = images[self.color]
         self.rect = self.image.get_rect().move(x, y)
+        self.sound_delete = sounds['delete']
+        self.sound_damage = sounds['damage']
         all_bricks.add(self)
 
     def update(self, *args):
@@ -52,10 +55,12 @@ class Brick(pygame.sprite.Sprite):
 
     def damage(self):
         if '-damaged' not in self.color:
-
+            self.sound_damage.play()
+            self.sound_damage.set_volume(2.0)
             self.color += '-damaged'
             self.image = images[self.color]
         else:
+            self.sound_delete.play()
             self.delete()
 
 
@@ -259,6 +264,11 @@ images = {
     }
 }
 
+sounds = {
+    'delete': load_sound('sounds/delete.wav'),
+    'damage': load_sound('sounds/damage.wav')
+}
+
 pole = BrickPole(7, 12)
 ball = Ball()
 platform = Platform()
@@ -267,6 +277,7 @@ indicator = Indicator()
 
 pygame.mixer.music.load('data/sounds/music/bg_music.mp3')
 pygame.mixer.music.play(-1)
+pygame.mixer.music.set_volume(0.25)
 
 
 all_sprites.add(ball)
