@@ -275,26 +275,64 @@ platform = Platform()
 bg = Background()
 indicator = Indicator()
 
-pygame.mixer.music.load('data/sounds/music/bg_music.mp3')
-pygame.mixer.music.play(-1)
-pygame.mixer.music.set_volume(0.25)
+
 
 
 all_sprites.add(ball)
 all_sprites.add(indicator)
 
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            terminate()
-        elif event.type == pygame.MOUSEMOTION:
-            platform.move_platform(event.pos[0])
 
+class Game:
+    def __init__(self):
+        pygame.mixer.music.load('data/sounds/music/bg_music.mp3')
+        pygame.mixer.music.play(-1)
+        pygame.mixer.music.set_volume(0.25)
 
-    tick = clock.tick()
-    ball.update(tick)
-    all_bricks.draw(screen)
-    indicator.update()
-    all_sprites.draw(screen)
-    pygame.display.flip()
-    update_screen()
+    def main(self):
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.MOUSEMOTION:
+                    platform.move_platform(event.pos[0])
+
+            tick = clock.tick()
+            ball.update(tick)
+            all_bricks.draw(screen)
+            indicator.update()
+            all_sprites.draw(screen)
+            pygame.display.flip()
+            update_screen()
+
+    def start_screen(self):
+        intro_text = ["ЗАСТАВКА", "",
+                      "Правила игры",
+                      "Если в правилах несколько строк,",
+                      "приходится выводить их построчно"]
+
+        fon = pygame.transform.scale(load_image('images/fon.png'), (WIDTH, HEIGHT))
+        screen.blit(fon, (0, 0))
+        font = pygame.font.Font(None, 30)
+        text_coord = 50
+        for line in intro_text:
+            string_rendered = font.render(line, 1, pygame.Color('black'))
+            intro_rect = string_rendered.get_rect()
+            text_coord += 10
+            intro_rect.top = text_coord
+            intro_rect.x = 10
+            text_coord += intro_rect.height
+            screen.blit(string_rendered, intro_rect)
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.KEYDOWN or \
+                                event.type == pygame.MOUSEBUTTONDOWN:
+                    self.main()
+            pygame.display.flip()
+            clock.tick(FPS)
+
+if __name__ == '__main__':
+    g = Game()
+    g.start_screen()
