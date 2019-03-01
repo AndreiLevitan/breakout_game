@@ -3,17 +3,20 @@ import sys
 import os
 
 
+# обновляет screen
 def update_screen():
     screen.fill(colors('black'))
     bg.update()
     bg.draw()
 
 
+# выходит из игры
 def terminate():
     pygame.quit()
     sys.exit()
 
 
+# загружает изображение
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
 
@@ -31,11 +34,13 @@ def load_image(name, colorkey=None):
     return image
 
 
+# загружает звук
 def load_sound(name):
     path = os.path.join('data', name)
     return pygame.mixer.Sound(path)
 
 
+# основной класс, отвечающий за кирчпич
 class Brick(pygame.sprite.Sprite):
     def __init__(self, x, y, color='blue-brick'):
         super().__init__(all_sprites)
@@ -47,14 +52,17 @@ class Brick(pygame.sprite.Sprite):
         self.sound_damage = sounds['damage']
         all_bricks.add(self)
 
+    # проверяет коллизию
     def update(self, *args):
         if pygame.sprite.collide_rect(self, ball):
             self.damage()
 
+    # удаляет кирпич
     def delete(self):
         indicator.add_combo()
         self.kill()
 
+    # расчитывает попадание по кирпичу
     def damage(self):
         if '-damaged' not in self.color:
             self.sound_damage.play()
@@ -67,6 +75,7 @@ class Brick(pygame.sprite.Sprite):
             self.delete()
 
 
+# основной класс, отвечающий за расположение кирпичей на поле
 class BrickPole:
     def __init__(self, lines, bricks):
         self.pole = []
@@ -83,13 +92,16 @@ class BrickPole:
                     brick = 'blue-brick'
                 self.place_brick(Brick(x, y, color=brick))
 
+    # добавляет кирпич на поле
     def place_brick(self, brick):
         self.pole.append(brick)
 
+    # проверяет коллизию
     def check_collision(self):
         all_bricks.update()
 
 
+# основной класс платформы
 class Platform(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
@@ -97,11 +109,15 @@ class Platform(pygame.sprite.Sprite):
         self.pos = (555, 650)
         self.rect = self.image.get_rect().move(self.pos)
 
+    # передвигает платформу на x
     def move_platform(self, x):
         self.pos = x, self.pos[1]
         self.rect = self.image.get_rect().move(self.pos)
 
 
+# основной класс, отвечающий за след мяча
+# оставляет в координате передвижение мяча его призрак,
+# создавая "след"
 class Trail(pygame.sprite.Sprite):
     def __init__(self, pos):
         super().__init__()
@@ -113,6 +129,8 @@ class Trail(pygame.sprite.Sprite):
         screen.blit(self.image, self.rect)
 
 
+# класс, отвечающий за задний фон
+# плавно его передвигает
 class Background(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__()
@@ -122,6 +140,7 @@ class Background(pygame.sprite.Sprite):
         self.xv = 5
         self.dir = LEFT
 
+    # метод передвижения фона
     def update(self):
         xs = self.xv * tick / 1000
         if self.pos[0] > 0:
@@ -133,10 +152,12 @@ class Background(pygame.sprite.Sprite):
         self.pos[0] += xs * self.dir
         self.rect = self.image.get_rect().move(self.pos)
 
+    # метод отрисовки фона
     def draw(self):
         screen.blit(self.image, self.rect)
 
 
+# основной класс мяча
 class Ball(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
@@ -148,6 +169,8 @@ class Ball(pygame.sprite.Sprite):
         self.xv = 500
         self.yv = 500
 
+    # рачитывает коллизию мяча
+    # и его дальнейшее передвижение
     def check_collision(self):
         if pygame.sprite.spritecollideany(self, all_bricks):
             self.direction[1] = -self.direction[1]
@@ -171,6 +194,7 @@ class Ball(pygame.sprite.Sprite):
         if pygame.sprite.collide_rect(self, platform):
             self.direction[1] = TOP
 
+    # передвигает мяч в зависимости от тика и скорости мяча
     def move_circle(self, tick):
         xs = self.xv * tick / 1000
         ys = self.yv * tick / 1000
@@ -180,6 +204,7 @@ class Ball(pygame.sprite.Sprite):
             self.pos[1] + self.direction[1] * ys
         )
 
+    # обновляет след, рассчитывает передвижение мяча
     def update(self, tick):
         self.check_collision()
         self.trail.append(Trail(self.pos))
@@ -193,6 +218,7 @@ class Ball(pygame.sprite.Sprite):
         self.rect = self.image.get_rect().move(self.pos)
 
 
+# класс, отвечающий за индикацию комбо
 class Indicator(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
@@ -208,13 +234,16 @@ class Indicator(pygame.sprite.Sprite):
 
         self.update_image()
 
+    # добавляет к счётчику комбо один пункт
     def add_combo(self):
         self.combo += 1
         self.timer = 1000
 
+    # обнуляет счётчик
     def remove_combo(self):
         self.combo = 0
 
+    # выводит счётчик
     def update_image(self):
         index = 'x' + str(min(self.combo, 6))
         self.image = images['indicators'][index]
@@ -228,6 +257,7 @@ class Indicator(pygame.sprite.Sprite):
         print(self.angle)
         self.rect = self.image.get_rect().move(self.pos)
 
+    # удаляет счетчик после определённого времени
     def update(self, *args):
         self.timer -= tick
 
@@ -240,17 +270,22 @@ class Indicator(pygame.sprite.Sprite):
 
 pygame.init()
 
+# определяет константы
 TOP = -1
 DOWN = 1
 
 RIGHT = 1
 LEFT = -1
 
+SIZE = WIDTH, HEIGHT = 1200, 720
+
+FPS = 120
+
 tick = 0
 
 
 clock = pygame.time.Clock()
-SIZE = WIDTH, HEIGHT = 1200, 720
+
 screen = pygame.display.set_mode(SIZE)
 colors = pygame.Color
 pygame.mouse.set_visible(False)
@@ -259,8 +294,8 @@ pygame.mouse.set_visible(False)
 all_sprites = pygame.sprite.Group()
 all_bricks = pygame.sprite.Group()
 
-FPS = 120
 
+# подключение всех спрайтов
 images = {
     'blue-brick': load_image('images/bricks/blue_brick.png'),
     'blue-brick-damaged': load_image('images/bricks/blue_brick_damaged.png'),
@@ -281,6 +316,7 @@ images = {
     }
 }
 
+# подключение всех звуков
 sounds = {
     'delete': load_sound('sounds/delete.wav'),
     'damage': load_sound('sounds/damage.wav')
@@ -297,12 +333,14 @@ all_sprites.add(ball)
 all_sprites.add(indicator)
 
 
+# класс, отвечающий за инициализацию игры и заставки
 class Game:
     def __init__(self):
         pygame.mixer.music.load('data/sounds/music/bg_music.mp3')
         pygame.mixer.music.play(-1)
         pygame.mixer.music.set_volume(0.25)
 
+    # основной цикл игры
     def main(self):
         update_screen()
         while True:
@@ -324,6 +362,7 @@ class Game:
             pygame.display.flip()
             update_screen()
 
+    # пересоздание игры
     def update(self):
         global all_sprites, all_bricks
         all_sprites = pygame.sprite.Group()
@@ -339,6 +378,7 @@ class Game:
         all_sprites.add(ball)
         all_sprites.add(indicator)
 
+    # заставки победы
     def win_screen(self):
         self.fon = pygame.transform.scale(load_image('images/win.png'), (WIDTH, HEIGHT))
         screen.blit(self.fon, (0, 0))
@@ -353,6 +393,7 @@ class Game:
             pygame.display.flip()
             clock.tick(FPS)
 
+    # начальная заставка
     def start_screen(self):
         self.fon = pygame.transform.scale(load_image('images/start.png'), (WIDTH, HEIGHT))
         screen.blit(self.fon, (0, 0))
@@ -368,6 +409,7 @@ class Game:
             pygame.display.flip()
             clock.tick(FPS)
 
+    # заставка проигрыша
     def end_screen(self):
         self.fon = pygame.transform.scale(load_image('images/end.png'), (WIDTH, HEIGHT))
         screen.blit(self.fon, (0, 0))
