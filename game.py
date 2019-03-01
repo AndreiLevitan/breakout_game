@@ -37,7 +37,14 @@ def load_image(name, colorkey=None):
 # загружает звук
 def load_sound(name):
     path = os.path.join('data', name)
-    return pygame.mixer.Sound(path)
+    
+    try:
+        sound = pygame.image.load(path)
+    except pygame.error as message:
+        print('Cannot load image:', name)
+        raise SystemExit(message)
+
+    return pygame.mixer.Sound(sound)
 
 
 # основной класс, отвечающий за кирчпич
