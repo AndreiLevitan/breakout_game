@@ -1,7 +1,6 @@
 import pygame
 import sys
 import os
-import time
 
 
 def update_screen():
@@ -17,12 +16,14 @@ def terminate():
 
 def load_image(name, colorkey=None):
     fullname = os.path.join('data', name)
+
     try:
         image = pygame.image.load(fullname)
     except pygame.error as message:
         print('Cannot load image:', name)
         raise SystemExit(message)
     image = image.convert_alpha()
+
     if colorkey is not None:
         if colorkey is -1:
             colorkey = image.get_at((0, 0))
@@ -41,6 +42,7 @@ class Brick(pygame.sprite.Sprite):
         self.color = color
         self.image = images[self.color]
         self.rect = self.image.get_rect().move(x, y)
+
         self.sound_delete = sounds['delete']
         self.sound_damage = sounds['damage']
         all_bricks.add(self)
@@ -57,6 +59,7 @@ class Brick(pygame.sprite.Sprite):
         if '-damaged' not in self.color:
             self.sound_damage.play()
             self.sound_damage.set_volume(2.0)
+
             self.color += '-damaged'
             self.image = images[self.color]
         else:
@@ -69,6 +72,7 @@ class BrickPole:
         self.pole = []
         self.brick_width = WIDTH // (bricks + 0)
         self.margin = (WIDTH - self.brick_width * bricks) // 2
+
         for layer in range(lines):
             for j in range(bricks):
                 x = j * self.brick_width + self.margin
@@ -122,8 +126,10 @@ class Background(pygame.sprite.Sprite):
         xs = self.xv * tick / 1000
         if self.pos[0] > 0:
             self.dir = LEFT
+
         if self.pos[0] < -720:
             self.dir = RIGHT
+
         self.pos[0] += xs * self.dir
         self.rect = self.image.get_rect().move(self.pos)
 
@@ -148,20 +154,27 @@ class Ball(pygame.sprite.Sprite):
             self.xv += 6
             self.yv += 6
             pole.check_collision()
+
         if self.pos[0] < 0:
             self.direction[0] = RIGHT
+
         if self.pos[0] > 1174:
             self.direction[0] = LEFT
+
         if self.pos[1] < 0:
             self.direction[1] = DOWN
+
         if self.pos[1] > 694:
             self.direction[1] = TOP
+            g.end_screen()
+
         if pygame.sprite.collide_rect(self, platform):
             self.direction[1] = TOP
 
     def move_circle(self, tick):
         xs = self.xv * tick / 1000
         ys = self.yv * tick / 1000
+
         self.pos = (
             self.pos[0] + self.direction[0] * xs,
             self.pos[1] + self.direction[1] * ys
@@ -171,6 +184,7 @@ class Ball(pygame.sprite.Sprite):
         self.check_collision()
         self.trail.append(Trail(self.pos))
         self.trail = self.trail[-3:]
+
         for trail in self.trail:
             trail.update()
             trail.draw()
@@ -194,7 +208,6 @@ class Indicator(pygame.sprite.Sprite):
 
         self.update_image()
 
-
     def add_combo(self):
         self.combo += 1
         self.timer = 1000
@@ -207,19 +220,23 @@ class Indicator(pygame.sprite.Sprite):
         self.image = images['indicators'][index]
         self.image = pygame.transform.rotate(self.image, self.angle)
         self.angle += self.v * tick / 1000 * self.dir
+
         if self.angle >= self.max_angle:
             self.dir = LEFT
         if self.angle <= self.min_angle:
             self.dir = RIGHT
+
         self.rect = self.image.get_rect().move(self.pos)
 
     def update(self, *args):
         self.timer -= tick
+
         if self.timer < 0:
             self.timer = 1000
             self.remove_combo()
 
         self.update_image()
+
 
 pygame.init()
 
@@ -276,8 +293,6 @@ bg = Background()
 indicator = Indicator()
 
 
-
-
 all_sprites.add(ball)
 all_sprites.add(indicator)
 
@@ -289,39 +304,43 @@ class Game:
         pygame.mixer.music.set_volume(0.25)
 
     def main(self):
+        update_screen()
         while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     terminate()
                 elif event.type == pygame.MOUSEMOTION:
                     platform.move_platform(event.pos[0])
+            if len(all_bricks) <= 0:
+                self.win_screen()
 
             tick = clock.tick()
             ball.update(tick)
             all_bricks.draw(screen)
             indicator.update()
             all_sprites.draw(screen)
+
             pygame.display.flip()
             update_screen()
 
-    def start_screen(self):
-        intro_text = ["ЗАСТАВКА", "",
-                      "Правила игры",
-                      "Если в правилах несколько строк,",
-                      "приходится выводить их построчно"]
+    def update(self):
+        global all_sprites, all_bricks
+        all_sprites = pygame.sprite.Group()
+        all_bricks = pygame.sprite.Group()
 
-        fon = pygame.transform.scale(load_image('images/fon.png'), (WIDTH, HEIGHT))
-        screen.blit(fon, (0, 0))
-        font = pygame.font.Font(None, 30)
-        text_coord = 50
-        for line in intro_text:
-            string_rendered = font.render(line, 1, pygame.Color('black'))
-            intro_rect = string_rendered.get_rect()
-            text_coord += 10
-            intro_rect.top = text_coord
-            intro_rect.x = 10
-            text_coord += intro_rect.height
-            screen.blit(string_rendered, intro_rect)
+        global pole, ball, platform, bg, indicator
+        pole = BrickPole(7, 12)
+        ball = Ball()
+        platform = Platform()
+        bg = Background()
+        indicator = Indicator()
+
+        all_sprites.add(ball)
+        all_sprites.add(indicator)
+
+    def win_screen(self):
+        self.fon = pygame.transform.scale(load_image('images/win.png'), (WIDTH, HEIGHT))
+        screen.blit(self.fon, (0, 0))
 
         while True:
             for event in pygame.event.get():
@@ -332,6 +351,37 @@ class Game:
                     self.main()
             pygame.display.flip()
             clock.tick(FPS)
+
+    def start_screen(self):
+        self.fon = pygame.transform.scale(load_image('images/start.png'), (WIDTH, HEIGHT))
+        screen.blit(self.fon, (0, 0))
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.KEYDOWN or \
+                                event.type == pygame.MOUSEBUTTONDOWN:
+                    self.update()
+                    self.main()
+            pygame.display.flip()
+            clock.tick(FPS)
+
+    def end_screen(self):
+        self.fon = pygame.transform.scale(load_image('images/end.png'), (WIDTH, HEIGHT))
+        screen.blit(self.fon, (0, 0))
+
+        while True:
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    terminate()
+                elif event.type == pygame.KEYDOWN or \
+                                event.type == pygame.MOUSEBUTTONDOWN:
+                    self.update()
+                    self.main()
+            pygame.display.flip()
+            clock.tick(FPS)
+
 
 if __name__ == '__main__':
     g = Game()
