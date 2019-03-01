@@ -197,7 +197,7 @@ class Indicator(pygame.sprite.Sprite):
     def __init__(self):
         super().__init__(all_sprites)
         self.combo = 0
-        self.timer = 1000
+        self.timer = 1500
         self.pos = (900, 600)
 
         self.angle = 0
@@ -225,14 +225,14 @@ class Indicator(pygame.sprite.Sprite):
             self.dir = LEFT
         if self.angle <= self.min_angle:
             self.dir = RIGHT
-
+        print(self.angle)
         self.rect = self.image.get_rect().move(self.pos)
 
     def update(self, *args):
         self.timer -= tick
 
         if self.timer < 0:
-            self.timer = 1000
+            self.timer = 1500
             self.remove_combo()
 
         self.update_image()
@@ -314,6 +314,7 @@ class Game:
             if len(all_bricks) <= 0:
                 self.win_screen()
 
+            global tick
             tick = clock.tick()
             ball.update(tick)
             all_bricks.draw(screen)
